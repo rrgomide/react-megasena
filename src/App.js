@@ -3,12 +3,11 @@ import React, { Component } from 'react';
 import { range, interval } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 
-import { Button } from '@material-ui/core';
-
 import './App.css';
 
 import { Numero } from './components/numero/Numero';
-import NewGameDialog from './components/game/NewGameDialog';
+import { NewGameDialog } from './components/game/NewGameDialog';
+import { MyButton } from './components/forms/MyButton';
 import { randomNumbers, randomNumber } from './helpers/randomHelpers';
 import { numberInArray } from './helpers/arrayHelpers';
 
@@ -19,6 +18,7 @@ class App extends Component {
     this.state = {
       interval: 1000,
       loading: false,
+      customGames: [],
       myGames: [],
       numbers: [],
       pickedNumbers: []
@@ -80,6 +80,13 @@ class App extends Component {
    */
   _isNumberPicked = number => numberInArray(number, this.state.pickedNumbers);
 
+  _newGame = numbers => {
+    console.log('newGame');
+    const newGames = this.state.customGames;
+    newGames.push(numbers);
+    this.setState({ customGames: newGames });
+  };
+
   render() {
     return (
       <div className="App">
@@ -92,48 +99,50 @@ class App extends Component {
             />
           ))}
         </div>
-        <br />
-        <Button
-          style={{ marginRight: '10px' }}
-          color="primary"
-          variant="raised"
-          disabled={this.state.loading}
-          className="button"
-          onClick={() => this._generatePickedNumbers()}
-        >
-          Iniciar sorteio
-        </Button>
-        <Button
-          style={{ marginRight: '10px' }}
-          color="primary"
-          variant="raised"
-          disabled={this.state.loading}
-          className="button"
-          onClick={() => this._generateMyGames()}
-        >
-          Gerar novos números
-        </Button>
 
-        <NewGameDialog />
+        <br />
+
+        <div className="row">
+          <MyButton
+            title="Iniciar sorteio"
+            disabled={this.state.loading}
+            onClick={() => this._generatePickedNumbers()}
+          />
+
+          <MyButton
+            title="Gerar novos números"
+            disabled={this.state.loading}
+            onClick={() => this._generateMyGames()}
+          />
+        </div>
 
         <div>
           <h2>Meus jogos</h2>
-          {this.state.myGames.map((game, index) => {
-            return (
-              <div key={index} className="row game">
-                {index + 1}:&nbsp;
-                {game.map(number => {
-                  return (
-                    <Numero
-                      key={number}
-                      value={number}
-                      picked={this._isNumberPicked(number)}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
+          {this.state.myGames
+            .concat(this.state.customGames)
+            .map((game, index) => {
+              return (
+                <div key={index} className="row game">
+                  {index + 1}:&nbsp;
+                  {game.map(number => {
+                    return (
+                      <Numero
+                        key={number}
+                        value={number}
+                        picked={this._isNumberPicked(number)}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+          <div style={{ marginTop: '15px' }}>
+            <NewGameDialog
+              disabled={this.state.loading}
+              onSucess={numbers => this._newGame(numbers)}
+            />
+          </div>
         </div>
       </div>
     );
