@@ -3,19 +3,25 @@ import React, { Component } from 'react';
 import { range, interval } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 
+import { Button } from '@material-ui/core';
+
 import './App.css';
 
 import { Numero } from './components/numero/Numero';
+import NewGameDialog from './components/game/NewGameDialog';
+import { randomNumbers, randomNumber } from './helpers/randomHelpers';
+import { numberInArray } from './helpers/arrayHelpers';
 
 class App extends Component {
   constructor() {
     super();
 
     this.state = {
-      numbers: [],
-      pickedNumbers: [],
+      interval: 1000,
+      loading: false,
       myGames: [],
-      loading: false
+      numbers: [],
+      pickedNumbers: []
     };
 
     this.pickedNumbers$ = null;
@@ -28,18 +34,8 @@ class App extends Component {
 
   _generateMyGames() {
     const myGames = [];
-    for (let i = 0; i < 6; i++) myGames.push(this._randomNumbers(1, 60, 6));
+    for (let i = 0; i < 6; i++) myGames.push(randomNumbers(1, 60, 6));
     this.setState({ myGames });
-  }
-
-  _randomNumbers(min, max, count) {
-    const numbers = [];
-    for (let i = 0; i < count; i++) {
-      const number = Math.floor(Math.random() * max + 1);
-      if (numbers.indexOf(number) === -1) numbers.push(number);
-      else i--;
-    }
-    return numbers.sort((a, b) => a > b);
   }
 
   _generateAllNumbers = async () => {
@@ -57,11 +53,11 @@ class App extends Component {
   _generatePickedNumbers() {
     this.setState({ loading: true });
     const pickedNumbers = [];
-    const pickedNumbers$ = interval(1000).pipe(
+    const pickedNumbers$ = interval(this.state.interval).pipe(
       map(value => {
         let numberOk = false;
         while (!numberOk) {
-          const newNumber = Math.floor(Math.random() * 60 + 1);
+          const newNumber = randomNumber(1, 60);
           if (pickedNumbers.indexOf(newNumber) === -1) {
             pickedNumbers.push(newNumber);
             numberOk = true;
@@ -77,6 +73,13 @@ class App extends Component {
     );
   }
 
+  /**
+   * Verificamos se o vetor de números sorteados
+   * possui pelo menos um item e por fim se o
+   * número do parâmetro está contido nesse vetor
+   */
+  _isNumberPicked = number => numberInArray(number, this.state.pickedNumbers);
+
   render() {
     return (
       <div className="App">
@@ -85,21 +88,34 @@ class App extends Component {
             <Numero
               key={number}
               value={number}
-              picked={
-                !!this.state.pickedNumbers.length &&
-                this.state.pickedNumbers.indexOf(number) !== -1
-              }
+              picked={this._isNumberPicked(number)}
             />
           ))}
         </div>
         <br />
-        <button
+        <Button
+          style={{ marginRight: '10px' }}
+          color="primary"
+          variant="raised"
           disabled={this.state.loading}
           className="button"
           onClick={() => this._generatePickedNumbers()}
         >
-          Iniciar sorteio!
-        </button>
+          Iniciar sorteio
+        </Button>
+        <Button
+          style={{ marginRight: '10px' }}
+          color="primary"
+          variant="raised"
+          disabled={this.state.loading}
+          className="button"
+          onClick={() => this._generateMyGames()}
+        >
+          Gerar novos números
+        </Button>
+
+        <NewGameDialog />
+
         <div>
           <h2>Meus jogos</h2>
           {this.state.myGames.map((game, index) => {
@@ -111,10 +127,7 @@ class App extends Component {
                     <Numero
                       key={number}
                       value={number}
-                      picked={
-                        !!this.state.pickedNumbers.length &&
-                        this.state.pickedNumbers.indexOf(number) !== -1
-                      }
+                      picked={this._isNumberPicked(number)}
                     />
                   );
                 })}
